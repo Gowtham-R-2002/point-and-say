@@ -1,0 +1,8 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+python-dotenv>=1.0.0
+boto3>=1.38.0
+Pillow>=11.0.0
+websockets>=14.0
+# Optional: Nova Act for UI verification (requires API key)
+# nova-act>=0.1.0
