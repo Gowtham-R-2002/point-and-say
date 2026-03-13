@@ -138,7 +138,7 @@ Return ONLY valid JSON (no markdown, no extra text):
         },
     })
 
-    model_id = os.getenv("NOVA_LITE_MODEL_ID", "amazon.nova-lite-v2:0")
+    model_id = os.getenv("NOVA_LITE_MODEL_ID", "us.amazon.nova-2-lite-v1:0")
 
     response = client.invoke_model(
         modelId=model_id,

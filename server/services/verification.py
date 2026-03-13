@@ -172,7 +172,7 @@ def _try_nova_lite_vision(
         })
 
         response = client.invoke_model(
-            modelId=os.getenv("NOVA_LITE_MODEL_ID", "amazon.nova-lite-v2:0"),
+            modelId=os.getenv("NOVA_LITE_MODEL_ID", "us.amazon.nova-2-lite-v1:0"),
             contentType="application/json",
             accept="application/json",
             body=body,

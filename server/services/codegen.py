@@ -238,7 +238,7 @@ Return ONLY raw JSON (no markdown wrapping):
     })
 
     # Nova Premier for code generation — flagship model with superior reasoning
-    model_id = os.getenv("NOVA_CODEGEN_MODEL_ID", "amazon.nova-premier-v1:0")
+    model_id = os.getenv("NOVA_CODEGEN_MODEL_ID", "us.amazon.nova-premier-v1:0")
 
     response = client.invoke_model(
         modelId=model_id,
