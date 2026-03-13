@@ -152,6 +152,8 @@
   padding: var(--space-2xl) var(--space-2xl) var(--space-3xl);
   overflow-y: auto;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Header */
