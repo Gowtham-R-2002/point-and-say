@@ -51,10 +51,12 @@ const CHUNK_SIZE = 1024;
 
 const bedrockClient = new BedrockRuntimeClient({
   region: REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-  },
+  ...(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY ? {
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+  } : {}),
   requestHandler: new NodeHttp2Handler({
     requestTimeout: 120000,
     sessionTimeout: 120000,
