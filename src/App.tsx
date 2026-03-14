@@ -11,14 +11,13 @@ import { ReasoningPanel } from './overlay/ReasoningPanel';
 import { PointerDot } from './overlay/PointerDot';
 import { StatusBar } from './overlay/StatusBar';
 import { ComponentPicker } from './overlay/ComponentPicker';
-import { WebcamPreview } from './gesture/WebcamPreview';
-import { useFingerTracking } from './gesture/useFingerTracking';
+
 import { useVoice } from './voice/useVoice';
 import { useComponentPicker } from './overlay/useComponentPicker';
 import { captureScreenshot } from './utils/captureScreenshot';
 import { groundComponent, generateCode, applyCode, undoLastChange, verifyChange } from './services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faBell, faHandPointer, faSpinner, faHand } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faBell } from '@fortawesome/free-solid-svg-icons';
 import { IconButton, Tooltip } from '@mui/material';
 import type { PointerPosition, ReasoningStep, PipelineStatus } from './types';
 
@@ -48,14 +47,7 @@ function App({ externalUrl }: AppProps) {
     openPickerWithComponents,
   } = useComponentPicker();
 
-  // Finger tracking
-  const {
-    trackedPoint,
-    isTracking,
-    isLoading: isTrackingLoading,
-    videoRef,
-    toggleTracking,
-  } = useFingerTracking();
+
 
   // Voice I/O
   const {
@@ -66,10 +58,7 @@ function App({ externalUrl }: AppProps) {
     speak,
   } = useVoice();
 
-  // Pointer: finger tracking takes priority
-  const activePointer: PointerPosition | null = trackedPoint
-    ? { x: trackedPoint.x, y: trackedPoint.y, source: 'finger', timestamp: trackedPoint.timestamp }
-    : pointer;
+
 
   // Track last processed voice command to avoid double-processing
   const lastProcessedRef = useRef<string | null>(null);
@@ -110,53 +99,7 @@ function App({ externalUrl }: AppProps) {
     return () => window.removeEventListener('message', handler);
   }, [externalUrl, pipelineStatus, openPickerWithComponents]);
 
-  // ---- Finger Dwell-Selection ----
-  // When finger hovers over a component for 1.5s, auto-open the picker
-  const dwellTimerRef = useRef<number | null>(null);
-  const lastDwellTargetRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (!trackedPoint || !isTracking) return;
-    if (pipelineStatus !== 'idle' && pipelineStatus !== 'listening') return;
-    if (pickerState.isOpen) return;
-
-    // Find data-component element at finger position
-    const el = document.elementFromPoint(trackedPoint.x, trackedPoint.y) as HTMLElement | null;
-    let componentEl: HTMLElement | null = el;
-    while (componentEl && !componentEl.getAttribute('data-component')) {
-      componentEl = componentEl.parentElement;
-    }
-
-    const currentTarget = componentEl?.getAttribute('data-component') || null;
-
-    // If target changed, reset the dwell timer
-    if (currentTarget !== lastDwellTargetRef.current) {
-      lastDwellTargetRef.current = currentTarget;
-      if (dwellTimerRef.current) {
-        clearTimeout(dwellTimerRef.current);
-        dwellTimerRef.current = null;
-      }
-
-      if (currentTarget && componentEl) {
-        // Start dwell timer — open picker after 1.5s
-        dwellTimerRef.current = window.setTimeout(() => {
-          setPointer({ x: trackedPoint.x, y: trackedPoint.y, source: 'finger', timestamp: Date.now() });
-          setReasoningSteps([]);
-          document.querySelectorAll('[data-component-selected]').forEach(el => {
-            (el as HTMLElement).removeAttribute('data-component-selected');
-          });
-          openPicker(trackedPoint.x, trackedPoint.y);
-          dwellTimerRef.current = null;
-        }, 1500);
-      }
-    }
-
-    return () => {
-      if (dwellTimerRef.current) {
-        clearTimeout(dwellTimerRef.current);
-      }
-    };
-  }, [trackedPoint, isTracking, pipelineStatus, pickerState.isOpen, openPicker]);
 
   // ---- Reasoning Step Helpers ----
   const addStep = useCallback((step: Omit<ReasoningStep, 'id' | 'timestamp'>) => {
@@ -500,22 +443,7 @@ function App({ externalUrl }: AppProps) {
                 <FontAwesomeIcon icon={faBell} style={{ fontSize: '0.85rem' }} />
               </IconButton>
             </Tooltip>
-            <Tooltip title={isTracking ? 'Stop finger tracking' : 'Start finger tracking'} arrow>
-              <IconButton
-                onClick={(e) => { e.stopPropagation(); toggleTracking(); }}
-                sx={{
-                  color: isTracking ? 'var(--accent-primary)' : 'var(--text-muted)',
-                  background: isTracking ? 'var(--accent-primary-soft)' : 'transparent',
-                  border: isTracking ? '1px solid var(--accent-primary)' : '1px solid transparent',
-                  '&:hover': { color: 'var(--accent-primary)', background: 'var(--accent-primary-soft)' },
-                }}
-              >
-                <FontAwesomeIcon
-                  icon={isTrackingLoading ? faSpinner : isTracking ? faHand : faHandPointer}
-                  style={{ fontSize: '0.85rem', ...(isTrackingLoading ? { animation: 'spin 1s linear infinite' } : {}) }}
-                />
-              </IconButton>
-            </Tooltip>
+
           </div>
         </div>
 
@@ -550,7 +478,7 @@ function App({ externalUrl }: AppProps) {
         onClear={clearReasoning}
       />
 
-      {activePointer && <PointerDot x={activePointer.x} y={activePointer.y} />}
+      {pointer && <PointerDot x={pointer.x} y={pointer.y} />}
 
       <ComponentPicker
         state={pickerState}
@@ -566,7 +494,7 @@ function App({ externalUrl }: AppProps) {
         interimText={interimText}
         onVoiceToggle={toggleListening}
       />
-      <WebcamPreview videoRef={videoRef} isTracking={isTracking} />
+
     </div>
   );
 }

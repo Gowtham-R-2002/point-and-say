@@ -85,7 +85,7 @@ const BUILTIN_FILE_MAP: Record<string, ComponentFileInfo> = {
     'status-bar': { name: 'StatusBar', filePath: 'src/overlay/StatusBar.tsx', description: 'Pipeline status bar' },
 };
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 /**
  * Convert a data-component attribute value into a human-readable display name.

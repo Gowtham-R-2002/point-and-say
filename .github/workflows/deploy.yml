@@ -1,0 +1,52 @@
+# Point & Say UI — CI/CD Pipeline
+# Deploys to EC2 on push to the staging branch.
+#
+# Required GitHub Secrets:
+#   EC2_HOST     — Public IP or DNS of your EC2 instance
+#   EC2_USER     — SSH user (ubuntu for Ubuntu, ec2-user for Amazon Linux)
+#   EC2_SSH_KEY  — Private SSH key (the .pem file contents)
+
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [staging]
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          timeout: 120s
+          command_timeout: 300s
+          script: |
+            cd ~/point-and-say-ui
+            
+            echo "🔄 Pulling latest code..."
+            git pull origin staging
+            
+            echo "📦 Installing frontend deps..."
+            npm install --prefer-offline
+            
+            echo "🐍 Installing backend deps..."
+            cd server
+            source venv/bin/activate
+            pip install -r requirements.txt --quiet
+            deactivate
+            cd ..
+            
+            echo "🔄 Restarting services..."
+            pm2 restart all
+            
+            sleep 3
+            pm2 status
+            
+            echo "✅ Deploy complete!"
