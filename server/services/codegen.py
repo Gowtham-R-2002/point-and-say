@@ -7,6 +7,7 @@ generates modified code using Nova Premier.
 import json
 import os
 import re
+from typing import Optional # Added for Optional type hint
 import boto3
 from botocore.config import Config
 
@@ -93,7 +94,7 @@ def parse_nova_json(raw_text: str) -> dict:
     raise ValueError("Could not parse Nova response after all attempts")
 
 
-def _extract_json_object(text: str) -> str | None:
+def _extract_json_object(text: str) -> Optional[str]:
     """
     Extract the first complete JSON object from text using brace-matching.
     Correctly handles braces inside JSON string values by tracking string boundaries.
