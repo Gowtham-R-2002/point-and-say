@@ -25,6 +25,7 @@ def parse_nova_json(raw_text: str) -> dict:
     """
     Parse JSON from Nova's response, handling common issues:
     - Markdown code blocks wrapping
+    - Trailing text after the JSON object
     - Invalid escape sequences (\\` and \\$) in template literals
     - Literal newlines inside JSON strings
     """
@@ -39,53 +40,117 @@ def parse_nova_json(raw_text: str) -> dict:
     print(f"   Nova raw response length: {len(clean)}")
     print(f"   Nova raw response preview: {clean[:200]}")
 
-    # Attempt 1: direct parse with strict=False
-    try:
-        return json.loads(clean, strict=False)
-    except json.JSONDecodeError as e1:
-        print(f"   JSON parse attempt 1 failed: {e1}")
-
-    # Attempt 2: fix invalid escapes (\\` → `, \\$ → $)
-    # These are NOT valid JSON escapes but Nova produces them for template literals
+    # Fix common invalid escapes Nova produces for template literals
     fixed = clean.replace('\\`', '`').replace('\\$', '$')
-    try:
-        result = json.loads(fixed, strict=False)
-        print(f"   JSON parse attempt 2 succeeded (fixed invalid escapes)")
-        return result
-    except json.JSONDecodeError as e2:
-        print(f"   JSON parse attempt 2 failed: {e2}")
 
-    # Attempt 3: index-based extraction
-    print(f"   Attempting index-based extraction...")
-    code_key = '"modifiedCode"'
-    expl_key = '"explanation"'
-    code_idx = fixed.find(code_key)
-    expl_idx = fixed.find(expl_key)
+    # Attempt 1: direct parse
+    for text, label in [(clean, "1 (raw)"), (fixed, "2 (escape-fixed)")]:
+        try:
+            return json.loads(text, strict=False)
+        except json.JSONDecodeError as e:
+            print(f"   JSON parse attempt {label} failed: {e}")
 
-    if code_idx >= 0 and expl_idx > code_idx:
-        # Find the opening " of the value after "modifiedCode":
-        colon_idx = fixed.index(':', code_idx + len(code_key))
-        val_start = fixed.index('"', colon_idx + 1) + 1
-        # Find the closing " before "explanation"
-        val_end = fixed.rindex('"', val_start, expl_idx)
-        raw_code = fixed[val_start:val_end]
+    # Attempt 3: extract the first complete JSON object via brace-matching
+    # This handles trailing text after the JSON (common with LLMs)
+    json_str = _extract_json_object(fixed)
+    if json_str:
+        try:
+            result = json.loads(json_str, strict=False)
+            print(f"   Brace-matching extraction succeeded")
+            return result
+        except json.JSONDecodeError as e:
+            print(f"   Brace-matching parse failed: {e}")
 
-        # Unescape standard JSON string escapes
-        raw_code = (raw_code
-                    .replace('\\n', '\n')
-                    .replace('\\t', '\t')
-                    .replace('\\"', '"')
-                    .replace('\\/', '/')
-                    .replace('\\\\', '\\'))
+    # Attempt 4: regex-based key extraction as final fallback
+    print(f"   Attempting regex key extraction...")
+    code_match = re.search(r'"modifiedCode"\s*:\s*"', fixed)
+    expl_match = re.search(r'"explanation"\s*:\s*"', fixed)
 
-        # Extract explanation
-        expl_match = re.search(r'"explanation"\s*:\s*"([^"]*)"', fixed[expl_idx:])
-        explanation = expl_match.group(1) if expl_match else "Code modified"
+    if code_match:
+        # Extract the string value starting after the opening quote
+        val_start = code_match.end()
+        val_end = _find_json_string_end(fixed, val_start)
+        if val_end >= 0:
+            raw_code = fixed[val_start:val_end]
+            # Unescape JSON string escapes
+            raw_code = (raw_code
+                        .replace('\\n', '\n')
+                        .replace('\\t', '\t')
+                        .replace('\\"', '"')
+                        .replace('\\/', '/')
+                        .replace('\\\\', '\\'))
 
-        print(f"   Index extraction succeeded, code length: {len(raw_code)}")
-        return {"modifiedCode": raw_code, "explanation": explanation}
+            explanation = "Code modified"
+            if expl_match:
+                expl_val_start = expl_match.end()
+                expl_val_end = _find_json_string_end(fixed, expl_val_start)
+                if expl_val_end >= 0:
+                    explanation = fixed[expl_val_start:expl_val_end]
 
-    raise ValueError(f"Could not parse Nova response after all attempts")
+            print(f"   Regex extraction succeeded, code length: {len(raw_code)}")
+            return {"modifiedCode": raw_code, "explanation": explanation}
+
+    raise ValueError("Could not parse Nova response after all attempts")
+
+
+def _extract_json_object(text: str) -> str | None:
+    """
+    Extract the first complete JSON object from text using brace-matching.
+    Correctly handles braces inside JSON string values by tracking string boundaries.
+    """
+    start = text.find('{')
+    if start < 0:
+        return None
+
+    depth = 0
+    in_string = False
+    escape_next = False
+    i = start
+
+    while i < len(text):
+        ch = text[i]
+
+        if escape_next:
+            escape_next = False
+            i += 1
+            continue
+
+        if ch == '\\' and in_string:
+            escape_next = True
+            i += 1
+            continue
+
+        if ch == '"' and not escape_next:
+            in_string = not in_string
+        elif not in_string:
+            if ch == '{':
+                depth += 1
+            elif ch == '}':
+                depth -= 1
+                if depth == 0:
+                    return text[start:i + 1]
+
+        i += 1
+
+    return None
+
+
+def _find_json_string_end(text: str, start: int) -> int:
+    """
+    Find the end of a JSON string value starting at position `start`
+    (which should be right after the opening quote).
+    Returns the index of the closing quote, or -1 if not found.
+    """
+    i = start
+    while i < len(text):
+        ch = text[i]
+        if ch == '\\':
+            i += 2  # skip escaped character
+            continue
+        if ch == '"':
+            return i
+        i += 1
+    return -1
 
 
 def _detect_styling_approach(source_code: str) -> str:
