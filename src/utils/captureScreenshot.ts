@@ -35,7 +35,9 @@ export interface CaptureResult {
  * Capture a screenshot of the target element with a red pointer dot overlay.
  */
 export async function captureScreenshot(options: CaptureOptions): Promise<CaptureResult> {
-    const target = options.target ?? document.querySelector('.app-main') as HTMLElement;
+    const target = options.target
+        ?? document.querySelector('.preview-content') as HTMLElement
+        ?? document.querySelector('.app-main') as HTMLElement;
 
     if (!target) {
         throw new Error('Capture target element not found');
