@@ -409,18 +409,20 @@ function App({ externalUrl }: AppProps) {
           });
         }
 
+        const explanationText = generation.explanation || 'Code modified successfully';
+
         // Voice confirmation step
         const confirmId = addStep({
           agent: 'confirm', agentLabel: 'Confirm', icon: '🔊',
-          message: `"${generation.explanation}"`,
+          message: `"${explanationText}"`,
           status: 'in-progress',
         });
 
-        await speak(`Done! ${generation.explanation}`);
+        await speak(`Done! ${explanationText}`);
 
         updateStep(confirmId, { status: 'completed' });
         setPipelineStatus('idle');
-        setLastCommand(`✅ ${generation.explanation}`);
+        setLastCommand(`✅ ${explanationText}`);
 
       } catch (err) {
         clearInterval(progressTimer);

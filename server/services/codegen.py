@@ -57,6 +57,15 @@ def parse_nova_json(raw_text: str) -> dict:
     if json_str:
         try:
             result = json.loads(json_str, strict=False)
+            # If explanation is missing, try to extract from trailing text
+            if not result.get("explanation"):
+                trailing = fixed[fixed.index(json_str) + len(json_str):].strip()
+                # Look for explanation in trailing text
+                expl_match = re.search(r'"?explanation"?\s*[:=]\s*"?([^"\n]+)', trailing)
+                if expl_match:
+                    result["explanation"] = expl_match.group(1).strip()
+                else:
+                    result["explanation"] = "Code modified successfully"
             print(f"   Brace-matching extraction succeeded")
             return result
         except json.JSONDecodeError as e:
