@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-    faBolt,
     faChartLine,
     faUsers,
     faFolderOpen,
@@ -32,11 +31,6 @@ export function Sidebar() {
 
     return (
         <aside className="sidebar" data-component="sidebar">
-            {/* Logo */}
-            <div className="sidebar-logo">
-                <FontAwesomeIcon icon={faBolt} />
-            </div>
-
             {/* Navigation */}
             <nav className="sidebar-nav">
                 {navItems.map((item) => (

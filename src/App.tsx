@@ -15,7 +15,7 @@ import { ComponentPicker } from './overlay/ComponentPicker';
 import { FileTree } from './playground/FileTree';
 import { DiffModal } from './playground/DiffModal';
 import type { DiffData } from './playground/DiffView';
-import { Zap, FolderTree, GitCompareArrows } from 'lucide-react';
+import { FolderTree, GitCompareArrows } from 'lucide-react';
 
 import { useVoice } from './voice/useVoice';
 import { useComponentPicker } from './overlay/useComponentPicker';
@@ -458,7 +458,6 @@ function App({ externalUrl }: AppProps) {
       {/* ===== Playground Header ===== */}
       <header className="playground-header">
         <div className="playground-brand">
-          <Zap size={18} className="brand-icon-svg" />
           <span className="brand-name">Point & Say</span>
           <span className="brand-badge">Playground</span>
         </div>

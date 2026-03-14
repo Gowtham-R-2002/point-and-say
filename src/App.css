@@ -61,6 +61,7 @@
   align-items: center;
   gap: var(--space-xs);
   flex: 1;
+  padding-top: var(--space-lg);
 }
 
 .sidebar-nav-item {
