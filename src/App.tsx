@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import './App.css';
+import './playground/Playground.css';
 import { Sidebar } from './app/components/Sidebar';
 import { HeroSection } from './app/components/HeroSection';
 import { StatsCards } from './app/components/StatsCards';
@@ -11,6 +12,10 @@ import { ReasoningPanel } from './overlay/ReasoningPanel';
 import { PointerDot } from './overlay/PointerDot';
 import { StatusBar } from './overlay/StatusBar';
 import { ComponentPicker } from './overlay/ComponentPicker';
+import { FileTree } from './playground/FileTree';
+import { CodeViewer } from './playground/CodeViewer';
+import { DiffView } from './playground/DiffView';
+import type { DiffData } from './playground/DiffView';
 
 import { useVoice } from './voice/useVoice';
 import { useComponentPicker } from './overlay/useComponentPicker';
@@ -21,6 +26,8 @@ import { faSearch, faBell } from '@fortawesome/free-solid-svg-icons';
 import { IconButton, Tooltip } from '@mui/material';
 import type { PointerPosition, ReasoningStep, PipelineStatus } from './types';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 interface AppProps {
   externalUrl: string | null;
 }
@@ -30,6 +37,11 @@ function App({ externalUrl }: AppProps) {
   const [pipelineStatus, setPipelineStatus] = useState<PipelineStatus>('idle');
   const [reasoningSteps, setReasoningSteps] = useState<ReasoningStep[]>([]);
   const [lastCommand, setLastCommand] = useState<string | null>(null);
+
+  // Playground state
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [fileContent, setFileContent] = useState<string>('');
+  const [lastDiff, setLastDiff] = useState<DiffData | null>(null);
 
   // External project state
   const [bridgeConnected, setBridgeConnected] = useState(false);
@@ -307,7 +319,7 @@ function App({ externalUrl }: AppProps) {
           componentName: selected.displayName,
           filePath: selected.filePath,
           intent,
-          targetElement: selected.description, // e.g. "Call-to-action button — 'Get Started'"
+          targetElement: selected.description,
         });
 
         clearInterval(progressTimer);
@@ -315,6 +327,17 @@ function App({ externalUrl }: AppProps) {
           status: 'completed',
           message: generation.explanation,
         });
+
+        // Capture diff for the playground
+        setLastDiff({
+          original: originalCode,
+          modified: generation.modifiedCode,
+          filePath: selected.filePath,
+          timestamp: Date.now(),
+        });
+        setSelectedFile(selected.filePath);
+        // Refresh code viewer with the new content
+        fetchFileContent(selected.filePath);
 
         // Apply step
         setPipelineStatus('applying');
@@ -409,92 +432,148 @@ function App({ externalUrl }: AppProps) {
     })();
   }, [lastVoiceCommand, pickerState.selected, pickerState.isOpen, addStep, updateStep, speak, selectByVoice]);
 
+  // Fetch file content for the playground code viewer
+  const fetchFileContent = useCallback(async (path: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/file-content?path=${encodeURIComponent(path)}`);
+      const data = await res.json();
+      if (data.status === 'ok') {
+        setFileContent(data.content);
+      }
+    } catch {
+      setFileContent('// Failed to load file');
+    }
+  }, []);
+
+  const handleFileSelect = useCallback((path: string) => {
+    setSelectedFile(path);
+    fetchFileContent(path);
+  }, [fetchFileContent]);
+
   return (
-    <div className={`app-layout${externalUrl ? ' external-mode' : ''}`}>
-      {!externalUrl && <Sidebar />}
+    <div className="playground-layout">
+      {/* ===== Playground Header ===== */}
+      <header className="playground-header">
+        <div className="playground-brand">
+          <span className="brand-icon">⚡</span>
+          <span className="brand-name">Point & Say</span>
+          <span className="brand-badge">Playground</span>
+        </div>
+        <div className="playground-controls">
+          <StatusBar
+            status={pipelineStatus}
+            lastCommand={lastCommand}
+            voiceStatus={voiceStatus}
+            interimText={interimText}
+            onVoiceToggle={toggleListening}
+          />
+        </div>
+      </header>
 
-      <main className="app-main" onClick={externalUrl ? undefined : handleMainClick}>
-        <div className="main-header" data-component="main-header">
-          <div className="main-header-left">
-            <h2>{externalUrl ? 'External Project' : 'Dashboard'}</h2>
-            <p>
-              {externalUrl
-                ? <>Connected to <code style={{ fontSize: '0.75rem', color: 'var(--accent-primary)' }}>{externalUrl}</code>
-                  {bridgeConnected && <span style={{ color: 'var(--accent-emerald)', marginLeft: 8, fontSize: '0.7rem' }}>● Bridge Active</span>}
-                </>
-                : "Welcome back, David. Here's what's happening today."
-              }
-            </p>
+      {/* ===== Left: File Explorer + Code ===== */}
+      <aside className="playground-sidebar">
+        <div className="sidebar-section file-explorer">
+          <div className="section-header">
+            <span className="section-icon">📁</span>
+            <span>Explorer</span>
           </div>
-          <div className="main-header-right">
-            <Tooltip title="Search" arrow>
-              <IconButton
-                onClick={(e) => e.stopPropagation()}
-                sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
-              >
-                <FontAwesomeIcon icon={faSearch} style={{ fontSize: '0.85rem' }} />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Notifications" arrow>
-              <IconButton
-                onClick={(e) => e.stopPropagation()}
-                sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}
-              >
-                <FontAwesomeIcon icon={faBell} style={{ fontSize: '0.85rem' }} />
-              </IconButton>
-            </Tooltip>
+          <FileTree
+            selectedFile={selectedFile}
+            activeFile={lastDiff?.filePath || null}
+            onSelectFile={handleFileSelect}
+          />
+        </div>
+        <div className="sidebar-section code-section">
+          <div className="section-header">
+            <span className="section-icon">📝</span>
+            <span>{selectedFile ? selectedFile.split('/').pop() : 'Code'}</span>
+          </div>
+          <CodeViewer
+            code={fileContent}
+            language="tsx"
+            fileName={selectedFile || ''}
+          />
+        </div>
+      </aside>
 
+      {/* ===== Center: Live Preview ===== */}
+      <main className="playground-preview" onClick={externalUrl ? undefined : handleMainClick}>
+        <div className="preview-frame">
+          <div className="preview-toolbar">
+            <div className="preview-dots">
+              <span className="dot red" />
+              <span className="dot yellow" />
+              <span className="dot green" />
+            </div>
+            <div className="preview-url">localhost:5173</div>
+          </div>
+          <div className="preview-content">
+            {externalUrl ? (
+              <iframe
+                ref={iframeRef}
+                src={externalUrl}
+                title="Target Application"
+                style={{ width: '100%', height: '100%', border: 'none' }}
+              />
+            ) : (
+              <div className="app-preview">
+                <Sidebar />
+                <div className="preview-main">
+                  <div className="main-header" data-component="main-header">
+                    <div className="main-header-left">
+                      <h2>Dashboard</h2>
+                      <p>Welcome back, David. Here&apos;s what&apos;s happening today.</p>
+                    </div>
+                    <div className="main-header-right">
+                      <Tooltip title="Search" arrow>
+                        <IconButton onClick={(e) => e.stopPropagation()}
+                          sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}>
+                          <FontAwesomeIcon icon={faSearch} style={{ fontSize: '0.85rem' }} />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Notifications" arrow>
+                        <IconButton onClick={(e) => e.stopPropagation()}
+                          sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--text-primary)' } }}>
+                          <FontAwesomeIcon icon={faBell} style={{ fontSize: '0.85rem' }} />
+                        </IconButton>
+                      </Tooltip>
+                    </div>
+                  </div>
+                  <HeroSection />
+                  <StatsCards />
+                  <AnalyticsChart />
+                  <DataTable />
+                  <ProfileCard />
+                  <ActionButton />
+                </div>
+              </div>
+            )}
           </div>
         </div>
-
-        {externalUrl ? (
-          <iframe
-            ref={iframeRef}
-            src={externalUrl}
-            title="Target Application"
-            style={{
-              width: '100%',
-              flex: 1,
-              border: 'none',
-              borderRadius: '12px',
-              background: 'var(--bg-base)',
-            }}
-          />
-        ) : (
-          <>
-            <HeroSection />
-            <StatsCards />
-            <AnalyticsChart />
-            <DataTable />
-            <ProfileCard />
-            <ActionButton />
-          </>
-        )}
       </main>
 
-      <ReasoningPanel
-        steps={reasoningSteps}
-        status={pipelineStatus}
-        onClear={clearReasoning}
-      />
+      {/* ===== Right: Reasoning + Diff ===== */}
+      <aside className="playground-panel">
+        <div className="panel-section reasoning-section">
+          <ReasoningPanel
+            steps={reasoningSteps}
+            status={pipelineStatus}
+            onClear={clearReasoning}
+          />
+        </div>
+        <div className="panel-section diff-section">
+          <DiffView diff={lastDiff} />
+        </div>
+      </aside>
 
+      {/* ===== Overlays ===== */}
       {pointer && <PointerDot x={pointer.x} y={pointer.y} />}
-
       <ComponentPicker
         state={pickerState}
         onSelect={selectComponent}
         onHighlight={highlightComponent}
         onClose={closePicker}
       />
-
-      <StatusBar
-        status={pipelineStatus}
-        lastCommand={lastCommand}
-        voiceStatus={voiceStatus}
-        interimText={interimText}
-        onVoiceToggle={toggleListening}
-      />
-
     </div>
   );
 }

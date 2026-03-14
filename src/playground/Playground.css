@@ -1,0 +1,460 @@
+/* ========================================
+   Point & Say — Playground Layout
+   ======================================== */
+
+/* ===== Grid Layout ===== */
+.playground-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  grid-template-rows: 48px 1fr;
+  height: 100vh;
+  background: var(--bg-primary);
+  overflow: hidden;
+  color: var(--text-primary);
+  font-family: var(--font-primary);
+}
+
+/* ===== Playground Header ===== */
+.playground-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: var(--glass-bg);
+  border-bottom: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px);
+  z-index: 10;
+}
+
+.playground-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-icon {
+  font-size: 1.1rem;
+}
+
+.brand-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.brand-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-primary);
+  background: var(--accent-primary-soft);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(251, 140, 102, 0.3);
+}
+
+.playground-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ===== Left Panel: File Explorer + Code ===== */
+.playground-sidebar {
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--glass-border);
+  background: rgba(12, 12, 20, 0.7);
+  overflow: hidden;
+}
+
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.file-explorer {
+  flex: 0 0 auto;
+  max-height: 38%;
+  border-bottom: 1px solid var(--glass-border);
+  overflow: hidden;
+}
+
+.code-section {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+
+.section-icon {
+  font-size: 0.75rem;
+}
+
+/* ===== File Tree ===== */
+.file-tree {
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.file-tree-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.file-tree-node:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
+.file-tree-node.selected {
+  background: rgba(251, 140, 102, 0.08);
+  color: var(--accent-primary);
+}
+
+.file-tree-node.active {
+  color: #4ade80;
+}
+
+.tree-icon {
+  font-size: 0.6rem;
+  width: 14px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.tree-icon.chevron {
+  font-size: 0.5rem;
+  color: var(--text-muted);
+}
+
+.tree-icon.folder {
+  color: var(--accent-primary);
+}
+
+.tree-icon.file {
+  color: var(--text-muted);
+}
+
+.tree-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-badge {
+  font-size: 0.55rem;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ade80;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+/* ===== Code Viewer ===== */
+.code-viewer {
+  overflow: hidden;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.68rem;
+  line-height: 1.65;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.code-viewer.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.code-empty-state,
+.diff-empty-state {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+  font-family: var(--font-primary);
+  font-size: 0.78rem;
+}
+
+.code-empty-icon,
+.diff-icon {
+  font-size: 1.5rem;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.code-tab {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: 0.7rem;
+  color: var(--accent-primary);
+  background: rgba(251, 140, 102, 0.05);
+  border-bottom: 2px solid var(--accent-primary);
+  flex-shrink: 0;
+}
+
+.code-tab-name {
+  font-weight: 600;
+}
+
+.code-scroll {
+  overflow: auto;
+  flex: 1;
+}
+
+.code-line {
+  display: flex;
+  padding: 0 12px;
+  min-height: 1.65em;
+  transition: background 0.3s ease;
+}
+
+.code-line.changed {
+  background: rgba(74, 222, 128, 0.08);
+  border-left: 2px solid #4ade80;
+}
+
+.line-number {
+  display: inline-block;
+  width: 32px;
+  flex-shrink: 0;
+  text-align: right;
+  padding-right: 12px;
+  color: rgba(255, 255, 255, 0.12);
+  user-select: none;
+}
+
+.line-content {
+  flex: 1;
+  white-space: pre;
+}
+
+/* ===== Center: Live Preview ===== */
+.playground-preview {
+  grid-row: 2;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.preview-frame {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.preview-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  background: rgba(12, 12, 20, 0.85);
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+
+.preview-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.preview-dots .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.preview-dots .dot.red { background: #ff5f57; }
+.preview-dots .dot.yellow { background: #febc2e; }
+.preview-dots .dot.green { background: #28c840; }
+
+.preview-url {
+  flex: 1;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 3px 16px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.preview-content {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+/* Dashboard inside the preview - adapts to fit */
+.app-preview {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  min-height: 100%;
+}
+
+.preview-main {
+  overflow: auto;
+  padding: 16px;
+}
+
+/* ===== Right Panel ===== */
+.playground-panel {
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--glass-border);
+  background: rgba(12, 12, 20, 0.7);
+  overflow: hidden;
+}
+
+.panel-section {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.reasoning-section {
+  flex: 1;
+  overflow: hidden;
+}
+
+.diff-section {
+  flex: 0 0 auto;
+  max-height: 45%;
+  border-top: 1px solid var(--glass-border);
+  overflow: hidden;
+}
+
+/* Override ReasoningPanel positioning in playground context */
+.playground-panel .reasoning-panel {
+  position: relative !important;
+  right: auto !important;
+  top: auto !important;
+  height: 100% !important;
+  width: 100% !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+}
+
+/* ===== Diff View ===== */
+.diff-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.diff-view.empty {
+  align-items: center;
+  justify-content: center;
+}
+
+.diff-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+
+.diff-filename {
+  color: var(--accent-primary);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.diff-time {
+  font-weight: 400;
+}
+
+.diff-content {
+  overflow: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.65rem;
+  line-height: 1.5;
+  padding: 4px 0;
+}
+
+.diff-line {
+  display: flex;
+  padding: 1px 8px;
+  min-height: 1.4em;
+}
+
+.diff-line.added {
+  background: rgba(74, 222, 128, 0.1);
+  color: #4ade80;
+}
+
+.diff-line.removed {
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+}
+
+.diff-marker {
+  width: 16px;
+  flex-shrink: 0;
+  text-align: center;
+  font-weight: 700;
+  user-select: none;
+}
+
+.diff-text {
+  flex: 1;
+  white-space: pre;
+}
+
+/* ===== StatusBar override in playground ===== */
+.playground-controls .status-bar {
+  position: relative !important;
+  bottom: auto !important;
+  left: auto !important;
+  width: auto !important;
+  border-radius: 8px !important;
+  padding: 4px 12px !important;
+  font-size: 0.72rem !important;
+}

@@ -75,6 +75,23 @@ async def health():
     }
 
 
+@app.get("/api/file-content")
+async def get_file_content(path: str):
+    """Read a source file for the playground code viewer."""
+    full_path = os.path.join(PROJECT_ROOT, path)
+    # Security: ensure path stays within project root
+    if not os.path.realpath(full_path).startswith(os.path.realpath(PROJECT_ROOT)):
+        return {"status": "error", "error": "Access denied"}
+    if not os.path.exists(full_path):
+        return {"status": "error", "error": "File not found"}
+    try:
+        with open(full_path, "r") as f:
+            content = f.read()
+        return {"status": "ok", "content": content, "path": path}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
 # ========== Project Configuration ==========
 
 class ConfigureRequest(BaseModel):
