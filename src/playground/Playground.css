@@ -20,12 +20,12 @@
   grid-column: 1 / -1;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 0 20px;
   background: var(--glass-bg);
   border-bottom: 1px solid var(--glass-border);
   backdrop-filter: blur(20px);
   z-index: 10;
+  position: relative;
 }
 
 .playground-brand {
@@ -33,6 +33,7 @@
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
+  z-index: 1;
 }
 
 .brand-name {
@@ -55,10 +56,12 @@
 }
 
 .playground-controls {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
 }
 
 /* ===== StatusBar centered in header ===== */
@@ -66,8 +69,9 @@
   position: relative !important;
   bottom: auto !important;
   left: auto !important;
+  transform: none !important;
   width: auto !important;
-  max-width: 520px !important;
+  max-width: 460px !important;
   border-radius: 8px !important;
   padding: 4px 14px !important;
   font-size: 0.72rem !important;
