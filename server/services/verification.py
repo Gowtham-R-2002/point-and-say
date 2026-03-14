@@ -64,12 +64,12 @@ def verify_change(
 def _get_bedrock_client():
     """Create a Bedrock Runtime client."""
     region = os.getenv("BEDROCK_REGION", os.getenv("AWS_REGION", "us-east-1"))
-    return boto3.client(
-        "bedrock-runtime",
-        region_name=region,
-        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-    )
+    kwargs = {"region_name": region}
+    # Only pass explicit credentials if set — otherwise boto3 uses IAM role
+    if os.getenv("AWS_ACCESS_KEY_ID") and os.getenv("AWS_SECRET_ACCESS_KEY"):
+        kwargs["aws_access_key_id"] = os.getenv("AWS_ACCESS_KEY_ID")
+        kwargs["aws_secret_access_key"] = os.getenv("AWS_SECRET_ACCESS_KEY")
+    return boto3.client("bedrock-runtime", **kwargs)
 
 
 def _try_nova_act_aws(
