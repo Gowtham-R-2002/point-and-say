@@ -23,7 +23,7 @@ import {
     faCubes,
 } from '@fortawesome/free-solid-svg-icons';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 interface ScanResult {
     projectPath: string;
