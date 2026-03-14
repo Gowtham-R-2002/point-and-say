@@ -213,7 +213,7 @@ async def sonic_transcribe(req: TranscribeRequest):
     Transcription endpoint.
     STT handled client-side via Web Speech API.
     """
-    log("🎤", "TRANSCRIBE", audioLength=len(req.audioBase64)[:50] + "...")
+    log("🎤", "TRANSCRIBE", audioLength=len(req.audioBase64))
     return {
         "status": "ok",
         "transcription": "",
@@ -224,11 +224,39 @@ async def sonic_transcribe(req: TranscribeRequest):
 @app.post("/api/sonic/speak")
 async def sonic_speak(req: SpeakRequest):
     """
-    Generate speech audio via Amazon Polly.
-    Falls back to browser TTS if Polly is unavailable.
+    Generate speech audio.
+    Priority chain: Nova 2 Sonic (JS service) → Amazon Polly → browser TTS fallback.
     """
     log("🔊", "TTS SPEAK", text=req.text[:100])
 
+    # 1. Try Nova 2 Sonic (via JS microservice on port 8001)
+    sonic_url = os.getenv("SONIC_SERVICE_URL", "http://localhost:8001")
+    try:
+        import urllib.request
+        sonic_req = urllib.request.Request(
+            f"{sonic_url}/tts",
+            data=json.dumps({"text": req.text}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(sonic_req, timeout=30) as resp:
+            sonic_data = json.loads(resp.read().decode("utf-8"))
+            if sonic_data.get("audioBase64") and not sonic_data.get("mock"):
+                log("✅", "SONIC TTS",
+                    engine=sonic_data.get("engine", "nova-sonic"),
+                    chunks=sonic_data.get("chunks", 0),
+                    elapsed=f"{sonic_data.get('elapsedMs', 0)}ms")
+                return {
+                    "status": "ok",
+                    "audioBase64": sonic_data["audioBase64"],
+                    "format": sonic_data.get("format", "audio/wav"),
+                    "engine": "nova-sonic",
+                    "mock": False,
+                }
+    except Exception as e:
+        log("⚠️", "SONIC UNAVAILABLE", error=str(e)[:80])
+
+    # 2. Fall back to Amazon Polly
     try:
         polly_audio = polly_speak(req.text)
         if polly_audio:
@@ -243,7 +271,8 @@ async def sonic_speak(req: SpeakRequest):
     except Exception as e:
         log("⚠️", "POLLY FAILED", error=str(e))
 
-    log("⚠️", "TTS FALLBACK", reason="Polly unavailable, using browser TTS")
+    # 3. Fall back to browser TTS
+    log("⚠️", "TTS FALLBACK", reason="Both Sonic and Polly unavailable, using browser TTS")
     return {"status": "ok", "audioBase64": None, "engine": "browser", "mock": True}
 
 

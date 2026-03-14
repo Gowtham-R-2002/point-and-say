@@ -11,6 +11,11 @@
   gap: 0;
 }
 
+/* When viewing an external project, hide the left sidebar */
+.app-layout.external-mode {
+  grid-template-columns: 1fr 300px;
+}
+
 /* ══════════════════════════════════════════
    SIDEBAR — Icon-Only Navigation (Kosholap style)
    ══════════════════════════════════════════ */

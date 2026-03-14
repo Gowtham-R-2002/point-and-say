@@ -337,6 +337,28 @@ function App({ externalUrl }: AppProps) {
         status: 'in-progress',
       });
 
+      // Rotating progress messages while Nova Premier thinks (~30-60s)
+      const progressMessages = [
+        `Analyzing ${selected.displayName} source code...`,
+        'Parsing component structure and dependencies...',
+        'Understanding design system tokens...',
+        `Planning modifications for: "${intent.slice(0, 40)}"...`,
+        'Generating modified TypeScript/JSX...',
+        'Validating imports and exports...',
+        'Ensuring no breaking changes...',
+        'Applying design system constraints...',
+        'Running final code validation...',
+        'Almost ready — assembling the complete file...',
+      ];
+      let progressIdx = 0;
+      const progressTimer = setInterval(() => {
+        progressIdx = (progressIdx + 1) % progressMessages.length;
+        updateStep(codegenId, {
+          message: progressMessages[progressIdx],
+          status: 'in-progress',
+        });
+      }, 3000);
+
       try {
         const { generation, originalCode } = await generateCode({
           componentName: selected.displayName,
@@ -345,6 +367,7 @@ function App({ externalUrl }: AppProps) {
           targetElement: selected.description, // e.g. "Call-to-action button — 'Get Started'"
         });
 
+        clearInterval(progressTimer);
         updateStep(codegenId, {
           status: 'completed',
           message: generation.explanation,
@@ -434,6 +457,7 @@ function App({ externalUrl }: AppProps) {
         setLastCommand(`✅ ${generation.explanation}`);
 
       } catch (err) {
+        clearInterval(progressTimer);
         const msg = err instanceof Error ? err.message : 'Generation failed';
         updateStep(codegenId, { status: 'error', details: msg });
         setPipelineStatus('idle');
@@ -443,8 +467,8 @@ function App({ externalUrl }: AppProps) {
   }, [lastVoiceCommand, pickerState.selected, pickerState.isOpen, addStep, updateStep, speak, selectByVoice]);
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <div className={`app-layout${externalUrl ? ' external-mode' : ''}`}>
+      {!externalUrl && <Sidebar />}
 
       <main className="app-main" onClick={externalUrl ? undefined : handleMainClick}>
         <div className="main-header" data-component="main-header">
