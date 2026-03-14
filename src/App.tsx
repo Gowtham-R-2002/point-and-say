@@ -105,7 +105,7 @@ function App({ externalUrl }: AppProps) {
   const addStep = useCallback((step: Omit<ReasoningStep, 'id' | 'timestamp'>) => {
     const newStep: ReasoningStep = {
       ...step,
-      id: crypto.randomUUID(),
+      id: (typeof crypto.randomUUID === 'function') ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       timestamp: Date.now(),
     };
     setReasoningSteps(prev => [...prev, newStep]);
