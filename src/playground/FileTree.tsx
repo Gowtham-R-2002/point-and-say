@@ -1,13 +1,8 @@
 /**
- * FileTree — Collapsible file explorer for the playground sidebar.
- * Shows the demo project's source files with selection + "modified" indicators.
+ * FileTree — Collapsible file explorer with Lucide icons.
  */
 import { useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faFile, faFolder, faFolderOpen,
-  faChevronDown, faChevronRight,
-} from '@fortawesome/free-solid-svg-icons';
+import { ChevronDown, ChevronRight, Folder, FolderOpen, FileCode } from 'lucide-react';
 
 interface FileNode {
   name: string;
@@ -62,13 +57,13 @@ function TreeNode({ node, depth, selectedFile, activeFile, onSelectFile }: {
         style={{ paddingLeft: `${12 + depth * 16}px` }}
         onClick={() => isFolder ? setIsOpen(!isOpen) : onSelectFile(node.path)}
       >
-        {isFolder && (
-          <FontAwesomeIcon icon={isOpen ? faChevronDown : faChevronRight} className="tree-icon chevron" />
-        )}
-        <FontAwesomeIcon
-          icon={isFolder ? (isOpen ? faFolderOpen : faFolder) : faFile}
-          className={`tree-icon ${isFolder ? 'folder' : 'file'}`}
-        />
+        {isFolder ? (
+          isOpen ? <ChevronDown size={12} className="tree-chevron" /> : <ChevronRight size={12} className="tree-chevron" />
+        ) : <span style={{ width: 12 }} />}
+        {isFolder
+          ? (isOpen ? <FolderOpen size={14} className="tree-folder" /> : <Folder size={14} className="tree-folder" />)
+          : <FileCode size={14} className="tree-file" />
+        }
         <span className="tree-label">{node.name}</span>
         {isActive && <span className="tree-badge">modified</span>}
       </div>

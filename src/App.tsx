@@ -13,9 +13,9 @@ import { PointerDot } from './overlay/PointerDot';
 import { StatusBar } from './overlay/StatusBar';
 import { ComponentPicker } from './overlay/ComponentPicker';
 import { FileTree } from './playground/FileTree';
-import { CodeViewer } from './playground/CodeViewer';
-import { DiffView } from './playground/DiffView';
+import { DiffModal } from './playground/DiffModal';
 import type { DiffData } from './playground/DiffView';
+import { Zap, FolderTree, GitCompareArrows } from 'lucide-react';
 
 import { useVoice } from './voice/useVoice';
 import { useComponentPicker } from './overlay/useComponentPicker';
@@ -42,6 +42,7 @@ function App({ externalUrl }: AppProps) {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
   const [lastDiff, setLastDiff] = useState<DiffData | null>(null);
+  const [showDiffModal, setShowDiffModal] = useState(false);
 
   // External project state
   const [bridgeConnected, setBridgeConnected] = useState(false);
@@ -457,7 +458,7 @@ function App({ externalUrl }: AppProps) {
       {/* ===== Playground Header ===== */}
       <header className="playground-header">
         <div className="playground-brand">
-          <span className="brand-icon">⚡</span>
+          <Zap size={18} className="brand-icon-svg" />
           <span className="brand-name">Point & Say</span>
           <span className="brand-badge">Playground</span>
         </div>
@@ -472,30 +473,17 @@ function App({ externalUrl }: AppProps) {
         </div>
       </header>
 
-      {/* ===== Left: File Explorer + Code ===== */}
+      {/* ===== Left: File Explorer ===== */}
       <aside className="playground-sidebar">
-        <div className="sidebar-section file-explorer">
-          <div className="section-header">
-            <span className="section-icon">📁</span>
-            <span>Explorer</span>
-          </div>
-          <FileTree
-            selectedFile={selectedFile}
-            activeFile={lastDiff?.filePath || null}
-            onSelectFile={handleFileSelect}
-          />
+        <div className="section-header">
+          <FolderTree size={14} className="section-icon-svg" />
+          <span>Explorer</span>
         </div>
-        <div className="sidebar-section code-section">
-          <div className="section-header">
-            <span className="section-icon">📝</span>
-            <span>{selectedFile ? selectedFile.split('/').pop() : 'Code'}</span>
-          </div>
-          <CodeViewer
-            code={fileContent}
-            language="tsx"
-            fileName={selectedFile || ''}
-          />
-        </div>
+        <FileTree
+          selectedFile={selectedFile}
+          activeFile={lastDiff?.filePath || null}
+          onSelectFile={handleFileSelect}
+        />
       </aside>
 
       {/* ===== Center: Live Preview ===== */}
@@ -554,7 +542,7 @@ function App({ externalUrl }: AppProps) {
         </div>
       </main>
 
-      {/* ===== Right: Reasoning + Diff ===== */}
+      {/* ===== Right: Reasoning + View Changes ===== */}
       <aside className="playground-panel">
         <div className="panel-section reasoning-section">
           <ReasoningPanel
@@ -563,9 +551,13 @@ function App({ externalUrl }: AppProps) {
             onClear={clearReasoning}
           />
         </div>
-        <div className="panel-section diff-section">
-          <DiffView diff={lastDiff} />
-        </div>
+        {lastDiff && (
+          <button className="view-changes-btn" onClick={() => setShowDiffModal(true)}>
+            <GitCompareArrows size={16} />
+            <span>View Changes</span>
+            <span className="changes-file">{lastDiff.filePath.split('/').pop()}</span>
+          </button>
+        )}
       </aside>
 
       {/* ===== Overlays ===== */}
@@ -576,6 +568,9 @@ function App({ externalUrl }: AppProps) {
         onHighlight={highlightComponent}
         onClose={closePicker}
       />
+      {showDiffModal && lastDiff && (
+        <DiffModal diff={lastDiff} onClose={() => setShowDiffModal(false)} />
+      )}
     </div>
   );
 }
